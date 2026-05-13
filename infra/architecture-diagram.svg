@@ -1,0 +1,124 @@
+<svg width="100%" viewBox="0 0 680 780" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>sync-service GCP infrastructure architecture</title>
+<desc>Architecture diagram: internet → Cloud Armor WAF → HTTPS LB → GKE Autopilot (sync-service pods, HPA, Secret Manager) ↔ MongoDB Atlas via VPC peering. Jenkins CI/CD → Artifact Registry → GKE deploy. Cloud Monitoring/Logging receives pod telemetry.</desc>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <style>
+    text { font-family: Arial, sans-serif; fill: #1a1a1a; }
+    .th  { font-size: 14px; font-weight: 600; }
+    .ts  { font-size: 12px; font-weight: 400; fill: #444; }
+    .arr { stroke: #555; stroke-width: 1.2; fill: none; }
+  </style>
+</defs>
+
+<!-- INTERNET -->
+<rect x="260" y="18" width="160" height="40" rx="8" fill="#e8e6df" stroke="#888" stroke-width="0.8"/>
+<text class="th" x="340" y="43" text-anchor="middle" dominant-baseline="central">Internet</text>
+<line x1="340" y1="58" x2="340" y2="84" class="arr" marker-end="url(#arrow)"/>
+
+<!-- CLOUD ARMOR -->
+<rect x="230" y="86" width="220" height="44" rx="8" fill="#fce8e8" stroke="#c04040" stroke-width="0.8"/>
+<text class="th" x="340" y="101" text-anchor="middle" dominant-baseline="central" fill="#7a1f1f">Cloud Armor WAF</text>
+<text class="ts" x="340" y="119" text-anchor="middle" dominant-baseline="central" fill="#a04040">DDoS · rate limit · OWASP rules</text>
+<line x1="340" y1="130" x2="340" y2="156" class="arr" marker-end="url(#arrow)"/>
+
+<!-- HTTPS LB -->
+<rect x="210" y="158" width="260" height="44" rx="8" fill="#e6f1fb" stroke="#185fa5" stroke-width="0.8"/>
+<text class="th" x="340" y="173" text-anchor="middle" dominant-baseline="central" fill="#0c447c">Global HTTPS Load Balancer</text>
+<text class="ts" x="340" y="191" text-anchor="middle" dominant-baseline="central" fill="#185fa5">Managed TLS · Cloud DNS</text>
+<line x1="340" y1="202" x2="340" y2="228" class="arr" marker-end="url(#arrow)"/>
+
+<!-- GKE CLUSTER CONTAINER -->
+<rect x="80" y="230" width="520" height="250" rx="16" fill="none" stroke="#aaa" stroke-width="1" stroke-dasharray="6 4"/>
+<text class="ts" x="104" y="251" fill="#888">GKE Autopilot cluster — asia-south1</text>
+
+<!-- NGINX INGRESS -->
+<rect x="224" y="262" width="232" height="44" rx="8" fill="#e1f5ee" stroke="#0f6e56" stroke-width="0.8"/>
+<text class="th" x="340" y="277" text-anchor="middle" dominant-baseline="central" fill="#085041">NGINX Ingress controller</text>
+<text class="ts" x="340" y="295" text-anchor="middle" dominant-baseline="central" fill="#0f6e56">TLS termination · routing</text>
+<line x1="340" y1="306" x2="340" y2="328" class="arr" marker-end="url(#arrow)"/>
+
+<!-- PODS -->
+<rect x="100" y="330" width="122" height="56" rx="8" fill="#eeedfe" stroke="#534ab7" stroke-width="0.8"/>
+<text class="th" x="161" y="351" text-anchor="middle" dominant-baseline="central" fill="#3c3489">sync-service</text>
+<text class="ts" x="161" y="369" text-anchor="middle" dominant-baseline="central" fill="#534ab7">pod · replica 1</text>
+
+<rect x="279" y="330" width="122" height="56" rx="8" fill="#eeedfe" stroke="#534ab7" stroke-width="0.8"/>
+<text class="th" x="340" y="351" text-anchor="middle" dominant-baseline="central" fill="#3c3489">sync-service</text>
+<text class="ts" x="340" y="369" text-anchor="middle" dominant-baseline="central" fill="#534ab7">pod · replica 2</text>
+
+<rect x="458" y="330" width="122" height="56" rx="8" fill="#eeedfe" stroke="#534ab7" stroke-width="0.8"/>
+<text class="th" x="519" y="351" text-anchor="middle" dominant-baseline="central" fill="#3c3489">sync-service</text>
+<text class="ts" x="519" y="369" text-anchor="middle" dominant-baseline="central" fill="#534ab7">pod · HPA scaled</text>
+
+<text class="ts" x="340" y="412" text-anchor="middle" fill="#888">HPA: 2–10 replicas · CPU 60% · Mem 75%</text>
+
+<!-- Pods to Secret Manager -->
+<line x1="161" y1="386" x2="161" y2="426" class="arr" marker-end="url(#arrow)" stroke="#888"/>
+<line x1="340" y1="386" x2="340" y2="426" class="arr" marker-end="url(#arrow)" stroke="#888"/>
+<line x1="519" y1="386" x2="519" y2="426" class="arr" marker-end="url(#arrow)" stroke="#888"/>
+
+<!-- SECRET MANAGER -->
+<rect x="196" y="428" width="288" height="40" rx="8" fill="#faeeda" stroke="#854f0b" stroke-width="0.8"/>
+<text class="th" x="340" y="443" text-anchor="middle" dominant-baseline="central" fill="#633806">GCP Secret Manager</text>
+<text class="ts" x="340" y="459" text-anchor="middle" dominant-baseline="central" fill="#854f0b">MongoDB URI · API keys · JWT secret</text>
+
+<!-- VPC LABEL -->
+<text class="ts" x="340" y="504" text-anchor="middle" fill="#999">— — — VPC: cloudeagle-vpc  10.0.0.0/16 — — —</text>
+
+<!-- MONGODB ATLAS -->
+<rect x="40" y="520" width="172" height="56" rx="8" fill="#eaf3de" stroke="#3b6d11" stroke-width="0.8"/>
+<text class="th" x="126" y="541" text-anchor="middle" dominant-baseline="central" fill="#27500a">MongoDB Atlas</text>
+<text class="ts" x="126" y="559" text-anchor="middle" dominant-baseline="central" fill="#3b6d11">M0 qa/staging · M10 prod</text>
+
+<text class="ts" x="230" y="553" text-anchor="middle" fill="#888">VPC peering</text>
+<line x1="212" y1="548" x2="258" y2="548" class="arr" marker-end="url(#arrow)" stroke="#1d9e75"/>
+<line x1="258" y1="548" x2="212" y2="548" class="arr" marker-end="url(#arrow)" stroke="#1d9e75"/>
+
+<!-- JENKINS -->
+<rect x="260" y="520" width="160" height="56" rx="8" fill="#faece7" stroke="#993c1d" stroke-width="0.8"/>
+<text class="th" x="340" y="541" text-anchor="middle" dominant-baseline="central" fill="#711b13">Jenkins CI/CD</text>
+<text class="ts" x="340" y="559" text-anchor="middle" dominant-baseline="central" fill="#993c1d">mgmt subnet · 10.0.10.0/24</text>
+<line x1="340" y1="576" x2="340" y2="596" class="arr" marker-end="url(#arrow)"/>
+
+<!-- ARTIFACT REGISTRY -->
+<rect x="260" y="598" width="160" height="44" rx="8" fill="#e1f5ee" stroke="#0f6e56" stroke-width="0.8"/>
+<text class="th" x="340" y="614" text-anchor="middle" dominant-baseline="central" fill="#085041">Artifact Registry</text>
+<text class="ts" x="340" y="632" text-anchor="middle" dominant-baseline="central" fill="#0f6e56">Docker images · GAR</text>
+<line x1="340" y1="598" x2="340" y2="480" class="arr" marker-end="url(#arrow)" stroke="#888" stroke-dasharray="4 3"/>
+
+<!-- CLOUD MONITORING -->
+<rect x="452" y="520" width="188" height="56" rx="8" fill="#e6f1fb" stroke="#185fa5" stroke-width="0.8"/>
+<text class="th" x="546" y="541" text-anchor="middle" dominant-baseline="central" fill="#0c447c">Cloud Monitoring</text>
+<text class="ts" x="546" y="559" text-anchor="middle" dominant-baseline="central" fill="#185fa5">Logging · Trace · Alerts</text>
+
+<!-- Pods to Monitoring -->
+<line x1="519" y1="480" x2="519" y2="518" class="arr" marker-end="url(#arrow)" stroke="#888" stroke-dasharray="3 3"/>
+<line x1="519" y1="518" x2="548" y2="518" class="arr" marker-end="url(#arrow)" stroke="#888" stroke-dasharray="3 3"/>
+
+<!-- Pods to MongoDB -->
+<line x1="161" y1="480" x2="126" y2="518" class="arr" marker-end="url(#arrow)" stroke="#1d9e75" stroke-width="1.2"/>
+
+<!-- IAM NOTE -->
+<text class="ts" x="340" y="668" text-anchor="middle" fill="#888">Workload Identity — no key files in cluster · least-privilege service accounts per env</text>
+
+<!-- LEGEND -->
+<rect x="40" y="690" width="600" height="72" rx="8" fill="none" stroke="#ccc" stroke-width="0.8"/>
+<text class="ts" x="56" y="710" fill="#555" font-weight="600">Legend</text>
+<rect x="56" y="722" width="12" height="8" rx="2" fill="#534ab7" opacity=".8"/>
+<text class="ts" x="74" y="730">sync-service pods</text>
+<rect x="180" y="722" width="12" height="8" rx="2" fill="#3b6d11" opacity=".8"/>
+<text class="ts" x="198" y="730">MongoDB Atlas</text>
+<rect x="300" y="722" width="12" height="8" rx="2" fill="#993c1d" opacity=".8"/>
+<text class="ts" x="318" y="730">Jenkins / CI</text>
+<rect x="406" y="722" width="12" height="8" rx="2" fill="#185fa5" opacity=".8"/>
+<text class="ts" x="424" y="730">Ingress / LB</text>
+<rect x="508" y="722" width="12" height="8" rx="2" fill="#854f0b" opacity=".8"/>
+<text class="ts" x="526" y="730">Secrets</text>
+<line x1="56" y1="752" x2="80" y2="752" stroke="#999" stroke-dasharray="4 3" stroke-width="1.2"/>
+<text class="ts" x="86" y="756">deploy path</text>
+<line x1="180" y1="752" x2="204" y2="752" stroke="#1d9e75" stroke-width="1.5"/>
+<text class="ts" x="210" y="756">private data path</text>
+</svg>
