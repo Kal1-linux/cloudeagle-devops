@@ -1,0 +1,8 @@
+*.zip
+*.zip:Zone.Identifier
+.DS_Store
+*.log
+target/
+.idea/
+*.iml
+.vscode/
